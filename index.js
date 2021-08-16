@@ -13,6 +13,7 @@ app.use(express.urlencoded({extended: true}));
 
 const API = `/api/v1`
 
+app.get("/", (req, res) => res.send("Hallo"));
 app.use(`${API}`, emailRoute)
 
 
