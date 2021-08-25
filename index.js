@@ -6,6 +6,7 @@ const cors = require("cors")
 
 
 const PORT = process.env.PORT
+//const hostname = process.env.HOSTNAME
 
 app.use(cors());
 app.use(express.json());
