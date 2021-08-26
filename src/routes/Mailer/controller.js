@@ -3,6 +3,8 @@ require("dotenv").config();
 const express = require("express");
 const app = express();
 const cors = require("cors");
+const handlebars = require("handlebars");
+const fs = require("fs");
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
@@ -10,6 +12,17 @@ app.use(cors());
 
 module.exports = {
   postEmail: (req, res) => {
+    const readHTMLFile = function (path, callback) {
+      fs.readFile(path, { encoding: "utf-8" }, function (err, html) {
+        if (err) {
+          throw err;
+          callback(err);
+        } else {
+          callback(null, html);
+        }
+      });
+    };
+
     const EMAIL = process.env.EMAIL;
     let mailOptions = new (function () {
       this.to = ["munasikataupn@gmail.com", EMAIL];
@@ -21,15 +34,6 @@ module.exports = {
                   <p>Email : ${req.body.email}</p>
                   <p>Pesan : ${req.body.message}</p>
                   <p>Harap panitia untuk membalas pesan ini.</p>
-                  <p>Terima kasih</p>`;
-    })();
-
-    let mailOptionsSender = new (function () {
-      this.to = req.body.email;
-      this.from = EMAIL;
-      this.subject = `${req.body.title}`;
-      this.html = `<h3>Terimakasih sudah menghubungu panitia MUNAS IKATA 2021 </h3>
-                  <p>Pesan anda akan kami teruskan ke bagian kepanitiaan terkait</p>
                   <p>Terima kasih</p>`;
     })();
 
@@ -85,18 +89,34 @@ module.exports = {
         ? console.log(err)
         : console.log(`=== Server is ready to take messages: ${success} ===`);
     });
+    readHTMLFile("src/model/template/emailToSender.html",
+      function (err, html) {
+        const template = handlebars.compile(html);
+        const message = req.body.message
+        const replacements = {
+          message: message
+        };
+        var htmlToSend = template(replacements);
 
-    transporterSender.sendMail(mailOptionsSender, function (err, data) {
-      if (err) {
-        res.json({
-          status: "fail",
-        });
-      } else {
-        console.log("== Message Sent ==");
-        res.json({
-          status: "success",
+        let mailOptionsSender = new (function () {
+          this.to = req.body.email;
+          this.from = EMAIL;
+          this.subject = `${req.body.title}`;
+          this.html = htmlToSend;
+        })();
+        transporterSender.sendMail(mailOptionsSender, function (err, data) {
+          if (err) {
+            res.json({
+              status: "fail",
+            });
+          } else {
+            console.log("== Message Sent ==");
+            res.json({
+              status: "success",
+            });
+          }
         });
       }
-    });
+    );
   },
 };
